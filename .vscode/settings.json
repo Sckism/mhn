@@ -1,0 +1,14 @@
+{
+    "python.analysis.extraPaths": [
+        "./clients/python/mhn"
+    ],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./clients/python",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true
+}
