@@ -15,3 +15,5 @@ class Dialect:
         self.array_end = array_end
         self.array_separator = array_separator
         self.line_break = line_break
+        
+default_dialect = Dialect()

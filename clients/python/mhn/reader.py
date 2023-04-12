@@ -1,8 +1,7 @@
 from io import IOBase
 from typing import Dict, List, Union
-from .dialect import Dialect
+from .dialect import Dialect, default_dialect
 from .schema import generate_schema
-from .mhn import default_dialect
 
 class DictReader:
     def __init__(

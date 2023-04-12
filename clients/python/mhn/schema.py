@@ -1,5 +1,4 @@
-from .dialect import Dialect
-from .mhn import default_dialect
+from .dialect import Dialect, default_dialect
 
 def generate_schema(data_dict:dict, dialect:Dialect = default_dialect, parent_key='') -> str:
     schema_parts = []

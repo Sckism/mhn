@@ -1,6 +1,5 @@
 from io import IOBase
-from .dialect import Dialect
-from .mhn import default_dialect
+from .dialect import Dialect, default_dialect
 
 class DictWriter:
     # Init
