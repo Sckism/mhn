@@ -3,6 +3,7 @@ from typing import Dict, List, Union
 from .dialect import Dialect, default_dialect
 from .schema import generate_schema
 
+
 class DictReader:
     def __init__(
         self,
@@ -13,7 +14,7 @@ class DictReader:
     ) -> None:
         self.input = f
         self.dialect = dialect
-        self.read_schema_from_first_row = read_schema_from_first_row       
+        self.read_schema_from_first_row = read_schema_from_first_row
 
         if read_schema_from_first_row:
             self.schema = self.input.readline().rstrip()
@@ -35,10 +36,12 @@ class DictReader:
 
     def parse_mhn_string(self, data_str, schema_str):
         def parse_array(array_str):
-            if array_str.startswith(self.dialect.array_start) and array_str.endswith(self.dialect.array_end):
+            if array_str.startswith(self.dialect.array_start) and array_str.endswith(
+                self.dialect.array_end
+            ):
                 array_str = array_str[1:-1]
             return array_str.split(self.dialect.array_separator)
-        
+
         def split_nested(data, delimiter, level_start, level_end):
             parts = []
             current_part = []
@@ -61,8 +64,18 @@ class DictReader:
 
         def parse_level(data_line, schema_line):
             result = {}
-            data_parts = split_nested(data_line, self.dialect.delimiter, self.dialect.level_start, self.dialect.level_end)
-            schema_parts = split_nested(schema_line, self.dialect.delimiter, self.dialect.level_start, self.dialect.level_end)
+            data_parts = split_nested(
+                data_line,
+                self.dialect.delimiter,
+                self.dialect.level_start,
+                self.dialect.level_end,
+            )
+            schema_parts = split_nested(
+                schema_line,
+                self.dialect.delimiter,
+                self.dialect.level_start,
+                self.dialect.level_end,
+            )
 
             for i, part in enumerate(schema_parts):
                 if self.dialect.array_start in part and self.dialect.array_end in part:
@@ -70,9 +83,15 @@ class DictReader:
                     result[field_name] = parse_array(data_parts[i])
                 elif self.dialect.level_start in part:
                     field_name, sub_schema = part.split(self.dialect.level_start)
-                    sub_data, remaining_data = data_parts[i].split(self.dialect.level_end, 1)
-                    sub_data = sub_data.lstrip(self.dialect.level_start)  # Remove leading level_start
-                    sub_schema = sub_schema.rstrip(self.dialect.level_end)  # Remove trailing level_end
+                    sub_data, remaining_data = data_parts[i].split(
+                        self.dialect.level_end, 1
+                    )
+                    sub_data = sub_data.lstrip(
+                        self.dialect.level_start
+                    )  # Remove leading level_start
+                    sub_schema = sub_schema.rstrip(
+                        self.dialect.level_end
+                    )  # Remove trailing level_end
                     result[field_name] = parse_level(sub_data, sub_schema)
                     data_parts[i] = remaining_data
                 else:
@@ -82,4 +101,3 @@ class DictReader:
 
         # Parse single line of data
         return parse_level(data_str.strip(), schema_str)
-
