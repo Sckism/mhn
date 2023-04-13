@@ -7,7 +7,8 @@ class Dialect:
         array_start: str = "[",
         array_end: str = "]",
         array_separator: str = "^",
-        line_break: str = "\n",
+        line_break: str = '\n',
+        escape_char: str = "\\"
     ):
         self.delimiter = delimiter
         self.level_start = level_start
@@ -16,6 +17,18 @@ class Dialect:
         self.array_end = array_end
         self.array_separator = array_separator
         self.line_break = line_break
+        self.escape_char = escape_char
+    
+    @property
+    def control_chars(self):
+        return set(
+            self.level_start
+            + self.level_end
+            + self.array_start
+            + self.array_end
+            + self.array_separator
+            + self.delimiter
+        )
 
 
 default_dialect = Dialect()

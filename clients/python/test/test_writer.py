@@ -67,6 +67,91 @@ class TestDictWriter(unittest.TestCase):
             writer.writerow(row)
         self.assertEqual(expected_output, output.getvalue())
 
+    def test_write_with_newlines(self):
+        data_rows = [
+            {
+                "Id": 1,
+                "Name": "John",
+                "Address": {
+                    "Line1": "123 Main St.",
+                    "Line2": "Apt. 5B\nBig City",
+                    "ZipCode": 12345,
+                },
+                "Tags": ["Python", "Django\nORM", "Flask"],
+            },
+            {
+                "Id": 2,
+                "Name": "Jane",
+                "Address": {
+                    "Line1": "456 Elm St.\nSuite 12",
+                    "Line2": "",
+                    "ZipCode": 54321,
+                },
+                "Tags": ["Java", "Spring", "Hibernate\nORM"],
+            },
+        ]
+
+        expected_output = (
+            "Id|Name|Address>Line1|Line2|ZipCode<|Tags[]\n"
+            "1|John|>123 Main St.|Apt. 5B\\nBig City|12345<|Python^Django\\nORM^Flask\n"
+            "2|Jane|>456 Elm St.\\nSuite 12||54321<|Java^Spring^Hibernate\\nORM"
+        )
+
+        output = io.StringIO()
+        writer = DictWriter(
+            output, schema="Id|Name|Address>Line1|Line2|ZipCode<|Tags[]"
+        )
+        writer.writeheader()
+        for row in data_rows:
+            writer.writerow(row)
+
+        self.assertEqual(expected_output, output.getvalue())
+
+    def test_write_with_control_chars(self):
+        self.maxDiff = None
+        data = {
+            "Field1": "Value with >",
+            "Field2": "Value with <",
+            "Field3": "Value with |",
+            "Field4": "Value with [",
+            "Field5": "Value with ]",
+            "Field6": "Value with ^",
+            "Field7": "Value with \n",
+            "Nested": {
+                "Field8": "Nested value with >",
+                "Field9": "Nested value with <",
+                "Field10": "Nested value with |",
+                "Field11": "Nested value with [",
+                "Field12": "Nested value with ]",
+                "Field13": "Nested value with ^",
+                "Field14": "Nested value with \n",
+            },
+            "Array": [
+                "Value with >",
+                "Value with <",
+                "Value with |",
+                "Value with [",
+                "Value with ]",
+                "Value with ^",
+                "Value with \n",
+            ],
+        }
+
+        schema = generate_schema(data)
+
+        expected_output = (
+            schema
+            + "\n"
+            + r"Value with \>|Value with \<|Value with \||Value with \[|Value with \]|Value with \^|Value with \n|>Nested value with \>|Nested value with \<|Nested value with \||Nested value with \[|Nested value with \]|Nested value with \^|Nested value with \n<|Value with \>^Value with \<^Value with \|^Value with \[^Value with \]^Value with \^^Value with \n"
+        )
+
+        output = io.StringIO()
+        writer = DictWriter(output, schema)
+        writer.writeheader()
+        writer.writerow(data)
+
+        self.assertEqual(expected_output, output.getvalue().strip())
+
 
 if __name__ == "__main__":
     unittest.main()
