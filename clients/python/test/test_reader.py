@@ -3,6 +3,8 @@ from io import StringIO
 from mhn.dialect import Dialect
 from mhn.reader import DictReader
 
+from mhn.schema import generate_schema
+
 
 class TestDictReader(unittest.TestCase):
     def test_read_flat_structure(self):
@@ -80,6 +82,51 @@ class TestDictReader(unittest.TestCase):
 
         output_data = [row for row in reader]
         self.assertEqual(data_rows, output_data)
+
+    def test_read_escaped_chars(self):
+        expected_output = [
+            {
+                "Field1": "Value with >",
+                "Field2": "Value with <",
+                "Field3": "Value with |",
+                "Field4": "Value with [",
+                "Field5": "Value with ]",
+                "Field6": "Value with ^",
+                "Field7": "Value with \n",
+                "Nested": {
+                    "Field8": "Nested value with >",
+                    "Field9": "Nested value with <",
+                    "Field10": "Nested value with |",
+                    "Field11": "Nested value with [",
+                    "Field12": "Nested value with ]",
+                    "Field13": "Nested value with ^",
+                    "Field14": "Nested value with \n",
+                },
+                "Array": [
+                    "Value with >",
+                    "Value with <",
+                    "Value with |",
+                    "Value with [",
+                    "Value with ]",
+                    "Value with ^",
+                    "Value with \n",
+                ],
+            }
+        ]
+        
+        schema = generate_schema(expected_output[0])
+        
+        input_data = (
+            schema
+            + "\n"
+            + r"Value with \>|Value with \<|Value with \||Value with \[|Value with \]|Value with \^|Value with \n|>Nested value with \>|Nested value with \<|Nested value with \||Nested value with \[|Nested value with \]|Nested value with \^|Nested value with \n<|Value with \>^Value with \<^Value with \|^Value with \[^Value with \]^Value with \^^Value with \n"
+        )
+        
+        f = StringIO(input_data)
+        reader = DictReader(f, read_schema_from_first_row=True)
+        output = list(reader)
+
+        self.assertEqual(expected_output, output)
 
 
 if __name__ == "__main__":

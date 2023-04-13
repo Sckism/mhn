@@ -22,6 +22,16 @@ class DictReader:
             self.schema = schema
         else:
             raise ValueError("A schema must be provided or read from the first row")
+        
+        # Create a mapping of escape+control character to replacement string
+        self.escape_mapping = {
+            f"{self.dialect.escape_char}{self.dialect.array_start}": "___ARRAY_START___",
+            f"{self.dialect.escape_char}{self.dialect.array_end}": "___ARRAY_END___",
+            f"{self.dialect.escape_char}{self.dialect.level_start}": "___LEVEL_START___",
+            f"{self.dialect.escape_char}{self.dialect.level_end}": "___LEVEL_END___",
+            f"{self.dialect.escape_char}{self.dialect.delimiter}": "___DELIMITER___",
+            f"{self.dialect.escape_char}{self.dialect.array_separator}": "___ARRAY_SEPARATOR___",
+        }
 
     def __iter__(self):
         return self
@@ -62,7 +72,7 @@ class DictReader:
             parts.append("".join(current_part))
             return parts
 
-        def parse_level(data_line, schema_line):
+        def parse_level(data_line, schema_line, escape_mapping):
             result = {}
             data_parts = split_nested(
                 data_line,
@@ -92,12 +102,23 @@ class DictReader:
                     sub_schema = sub_schema.rstrip(
                         self.dialect.level_end
                     )  # Remove trailing level_end
-                    result[field_name] = parse_level(sub_data, sub_schema)
+                    result[field_name] = parse_level(sub_data, sub_schema, escape_mapping)
                     data_parts[i] = remaining_data
                 else:
-                    result[part] = data_parts[i]
+                    val = data_parts[i]
+                    # Replace temporary placeholders with original characters
+                    for control_char, replace_char in escape_mapping.items():
+                        val = val.replace(replace_char, control_char.lstrip(self.dialect.escape_char))
+                        
+                    result[part] = val
 
             return result
 
+        # Replace escaped characters with temporary placeholders
+        for control_char, replace_char in self.escape_mapping.items():
+            data_str = data_str.replace(control_char, replace_char)
+
         # Parse single line of data
-        return parse_level(data_str.strip(), schema_str)
+        parsed_data = parse_level(data_str.strip(), schema_str, self.escape_mapping)
+
+        return parsed_data
