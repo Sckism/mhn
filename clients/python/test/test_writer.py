@@ -2,6 +2,7 @@ import unittest
 import io
 from mhn.dialect import Dialect
 from mhn.writer import DictWriter
+from mhn.schema import generate_schema
 
 class TestDictWriter(unittest.TestCase):
     def test_write_single_row_with_default_dialect(self):
@@ -10,7 +11,7 @@ class TestDictWriter(unittest.TestCase):
             'Age': 30,
             'Hobbies': ['reading', 'writing', 'traveling']
         }
-        schema = 'Name|Age|Hobbies[]'
+        schema = generate_schema(data)
         expected_output = 'Name|Age|Hobbies[]\nJohn|30|reading^writing^traveling'
 
         output = io.StringIO()
@@ -33,7 +34,7 @@ class TestDictWriter(unittest.TestCase):
             array_end='}',
             array_separator=','
         )
-        schema = 'Name;Age;Hobbies{}'
+        schema = generate_schema(data, dialect=custom_dialect)
         expected_output = 'Name;Age;Hobbies{}\nJohn;30;reading,writing,traveling'
 
         output = io.StringIO()
