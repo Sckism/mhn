@@ -43,6 +43,11 @@ class DictReader:
 
         row_data = self.parse_mhn_string(line, self.schema)
         return row_data
+    
+    def unescape(self, value):
+        for control_char, replace_char in self.escape_mapping.items():
+            value = value.replace(replace_char, control_char.lstrip(self.dialect.escape_char))
+        return value
 
     def parse_mhn_string(self, data_str, schema_str):
         def parse_array(array_str):
@@ -71,6 +76,14 @@ class DictReader:
 
             parts.append("".join(current_part))
             return parts
+        
+        def unescape_newlines(value, dialect: Dialect):
+            if isinstance(value, str):
+                return value.replace(f"{dialect.escape_char}\\n", "\n")
+            elif isinstance(value, list):
+                return [unescape_newlines(v, dialect) for v in value]
+            else:
+                return value
 
         def parse_level(data_line, schema_line, escape_mapping):
             result = {}
@@ -90,7 +103,7 @@ class DictReader:
             for i, part in enumerate(schema_parts):
                 if self.dialect.array_start in part and self.dialect.array_end in part:
                     field_name = part[:-2]
-                    result[field_name] = parse_array(data_parts[i])
+                    result[field_name] = [unescape_newlines(self.unescape(val), self.dialect) for val in parse_array(data_parts[i])]
                 elif self.dialect.level_start in part:
                     field_name, sub_schema = part.split(self.dialect.level_start)
                     sub_data, remaining_data = data_parts[i].split(
@@ -109,8 +122,8 @@ class DictReader:
                     # Replace temporary placeholders with original characters
                     for control_char, replace_char in escape_mapping.items():
                         val = val.replace(replace_char, control_char.lstrip(self.dialect.escape_char))
-                        
-                    result[part] = val
+
+                    result[part] = unescape_newlines(val, self.dialect)
 
             return result
 

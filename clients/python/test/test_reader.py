@@ -92,7 +92,6 @@ class TestDictReader(unittest.TestCase):
                 "Field4": "Value with [",
                 "Field5": "Value with ]",
                 "Field6": "Value with ^",
-                "Field7": "Value with \n",
                 "Nested": {
                     "Field8": "Nested value with >",
                     "Field9": "Nested value with <",
@@ -100,7 +99,6 @@ class TestDictReader(unittest.TestCase):
                     "Field11": "Nested value with [",
                     "Field12": "Nested value with ]",
                     "Field13": "Nested value with ^",
-                    "Field14": "Nested value with \n",
                 },
                 "Array": [
                     "Value with >",
@@ -109,7 +107,6 @@ class TestDictReader(unittest.TestCase):
                     "Value with [",
                     "Value with ]",
                     "Value with ^",
-                    "Value with \n",
                 ],
             }
         ]
@@ -119,9 +116,38 @@ class TestDictReader(unittest.TestCase):
         input_data = (
             schema
             + "\n"
-            + r"Value with \>|Value with \<|Value with \||Value with \[|Value with \]|Value with \^|Value with \n|>Nested value with \>|Nested value with \<|Nested value with \||Nested value with \[|Nested value with \]|Nested value with \^|Nested value with \n<|Value with \>^Value with \<^Value with \|^Value with \[^Value with \]^Value with \^^Value with \n"
+            + r"Value with \>|Value with \<|Value with \||Value with \[|Value with \]|Value with \^|>Nested value with \>|Nested value with \<|Nested value with \||Nested value with \[|Nested value with \]|Nested value with \^|<|Value with \>^Value with \<^Value with \|^Value with \[^Value with \]^Value with \^"
         )
         
+        f = StringIO(input_data)
+        reader = DictReader(f, read_schema_from_first_row=True)
+        output = list(reader)
+
+        self.assertEqual(expected_output, output)
+
+    def test_read_escaped_newlines(self):
+        expected_output = [
+            {
+                "Field1": "Value with newline\ninside",
+                "Field2": "Value with newline\n\nand two newlines",
+                "Nested": {
+                    "Field3": "Nested value with newline\ninside",
+                },
+                "Array": [
+                    "Value with newline\ninside",
+                    "Value with two\nnewlines\nhere",
+                ],
+            }
+        ]
+
+        schema = generate_schema(expected_output[0])
+
+        input_data = (
+            schema
+            + "\n"
+            + r"Value with newline\\ninside|Value with newline\\n\\nand two newlines|>Nested value with newline\\ninside|<|Value with newline\\ninside^Value with two\\nnewlines\\nhere"
+        )
+
         f = StringIO(input_data)
         reader = DictReader(f, read_schema_from_first_row=True)
         output = list(reader)
