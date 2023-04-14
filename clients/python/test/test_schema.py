@@ -89,6 +89,25 @@ class TestGenerateSchema(unittest.TestCase):
         generated_schema = generate_schema(data, dialect=custom_dialect)
         self.assertEqual(expected_schema, generated_schema)
 
+    def test_generate_schema_with_array_of_nested_objects(self):
+        data = {
+            "books": [
+                {
+                    "Title": "The Enchanted Forest",
+                    "Author": {"Name": "Vivian L. Hawthorne"},
+                    "EstimatedWordCount": 60000,
+                },
+                {
+                    "Title": "The Invisible Man",
+                    "Author": {"Name": "H.G. Wells"},
+                    "EstimatedWordCount": 40000,
+                },
+            ]
+        }
+        expected_schema = "books[Title|Author>Name<|EstimatedWordCount]"
+        generated_schema = generate_schema(data)
+        self.assertEqual(expected_schema, generated_schema)
+
 
 if __name__ == "__main__":
     unittest.main()

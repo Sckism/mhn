@@ -11,6 +11,10 @@ def generate_schema(
             schema_parts.append(
                 f"{key}{dialect.level_start}{sub_schema}{dialect.level_end}"
             )
+        elif isinstance(value, list) and all(isinstance(item, dict) for item in value):
+            # handle arrays of nested objects
+            sub_schema = generate_schema(value[0], dialect=dialect, parent_key="")
+            schema_parts.append(f"{key}{dialect.array_start}{sub_schema}{dialect.array_end}")
         elif isinstance(value, list):
             schema_parts.append(f"{key}{dialect.array_start}{dialect.array_end}")
         else:
