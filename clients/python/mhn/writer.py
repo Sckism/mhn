@@ -86,6 +86,24 @@ class DictWriter:
         def escape_control_chars(data, dialect: Dialect):
             return [escape(v, dialect) for v in data]
 
+        def handle_array(part, array_items):
+            if isinstance(array_items[0], dict):
+                end_index = part.rfind(self.dialect.array_end)
+                sub_schema = part[:end_index].split(self.dialect.array_start, 1)[1]
+                return self.dialect.array_separator.join([
+                    self.convert_dict_to_mhn(item, sub_schema=sub_schema) for item in array_items
+                ])
+            else:
+                return self.dialect.array_separator.join(escape_control_chars(escape_newlines(array_items, self.dialect), self.dialect))
+
+        def handle_nested_object(part, field_name):
+            _, nested_schema = part.split(self.dialect.level_start)
+            nested_schema = nested_schema[:-1]  # Remove trailing level_end
+            return f"{self.dialect.level_start}{self.convert_dict_to_mhn(data_dict[field_name], sub_schema=nested_schema)}{self.dialect.level_end}"
+
+        def handle_regular_field(field_name):
+            return escape(escape_newlines(str(data_dict[field_name]), self.dialect), self.dialect)
+
         mhn_parts = []
         schema_parts = parse_schema_parts(sub_schema or self.schema)
 
@@ -95,27 +113,10 @@ class DictWriter:
             )[0]
 
             if self.dialect.array_start in part and self.dialect.array_end in part:
-                array_items = data_dict[field_name]
-                if isinstance(array_items[0], dict):
-                    end_index = part.rfind(self.dialect.array_end)
-                    sub_schema = part[:end_index].split(self.dialect.array_start, 1)[1]
-                    mhn_parts.append(
-                        self.dialect.array_separator.join([
-                            self.convert_dict_to_mhn(item, sub_schema=sub_schema) for item in array_items
-                        ])
-                    )
-                else:
-                    mhn_parts.append(
-                        self.dialect.array_separator.join(escape_control_chars(escape_newlines(array_items, self.dialect), self.dialect))
-                    )
+                mhn_parts.append(handle_array(part, data_dict[field_name]))
             elif self.dialect.level_start in part:
-                field_name = part.split(self.dialect.level_start)[0]
-                _, nested_schema = part.split(self.dialect.level_start)
-                nested_schema = nested_schema[:-1]  # Remove trailing level_end
-                mhn_parts.append(
-                    f"{self.dialect.level_start}{self.convert_dict_to_mhn(data_dict[field_name], sub_schema=nested_schema)}{self.dialect.level_end}"
-                )
+                mhn_parts.append(handle_nested_object(part, field_name))
             else:
-                mhn_parts.append(escape(escape_newlines(str(data_dict[field_name]), self.dialect), self.dialect))
+                mhn_parts.append(handle_regular_field(field_name))
 
         return self.dialect.delimiter.join(mhn_parts)
