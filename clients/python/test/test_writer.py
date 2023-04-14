@@ -6,6 +6,40 @@ from mhn.schema import generate_schema
 
 
 class TestDictWriter(unittest.TestCase):
+    def test_write_single_field_array(self):
+        data = {
+            "Hobbies": ["reading", "writing", "traveling"],
+        }
+        expected_output = (
+            "Hobbies[]\n"
+            "reading^writing^traveling"
+        )
+
+        schema = generate_schema(data)
+        output = io.StringIO()
+        writer = DictWriter(output, schema)
+        writer.writeheader()
+        writer.writerow(data)
+
+        self.assertEqual(expected_output, output.getvalue())
+        
+    def test_write_single_nested_object(self):
+        data = {
+            "Author": {"Name": "Vivian L. Hawthorne", "Age": 42},
+        }
+        expected_output = (
+            "Author>Name|Age<\n"
+            ">Vivian L. Hawthorne|42<"
+        )
+
+        schema = generate_schema(data)
+        output = io.StringIO()
+        writer = DictWriter(output, schema)
+        writer.writeheader()
+        writer.writerow(data)
+
+        self.assertEqual(expected_output, output.getvalue())
+        
     def test_write_single_row_with_default_dialect(self):
         data = {
             "Name": "John",
@@ -151,6 +185,95 @@ class TestDictWriter(unittest.TestCase):
         writer.writerow(data)
 
         self.assertEqual(expected_output, output.getvalue().strip())
+
+    def test_write_data_with_array_of_nested_objects(self):
+        data = {
+            "books": [
+                {
+                    "Title": "The Enchanted Forest",
+                    "Author": {"Name": "Vivian L. Hawthorne"},
+                    "EstimatedWordCount": 60000,
+                },
+                {
+                    "Title": "The Invisible Man",
+                    "Author": {"Name": "H.G. Wells"},
+                    "EstimatedWordCount": 40000,
+                },
+            ]
+        }
+
+        expected_output = (
+            "books[Title|Author>Name<|EstimatedWordCount]\n"
+            "The Enchanted Forest|>Vivian L. Hawthorne<|60000^"
+            "The Invisible Man|>H.G. Wells<|40000"
+        )
+
+        schema = "books[Title|Author>Name<|EstimatedWordCount]"
+        output = io.StringIO()
+        writer = DictWriter(output, schema)
+        writer.writeheader()
+        writer.writerow(data)
+
+        self.assertEqual(expected_output, output.getvalue())
+
+    def test_write_data_with_three_layers_of_arrays_containing_structs(self):
+        self.maxDiff = None
+        data = {
+            "Countries": [
+                {
+                    "Name": "CountryA",
+                    "Cities": [
+                        {
+                            "Name": "CityA1",
+                            "Attractions": [
+                                {"Name": "AttractionA1", "Type": "Museum"},
+                                {"Name": "AttractionA2", "Type": "Park"},
+                            ],
+                        },
+                        {
+                            "Name": "CityA2",
+                            "Attractions": [
+                                {"Name": "AttractionA3", "Type": "Beach"},
+                                {"Name": "AttractionA4", "Type": "Zoo"},
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "Name": "CountryB",
+                    "Cities": [
+                        {
+                            "Name": "CityB1",
+                            "Attractions": [
+                                {"Name": "AttractionB1", "Type": "Museum"},
+                                {"Name": "AttractionB2", "Type": "Park"},
+                            ],
+                        },
+                        {
+                            "Name": "CityB2",
+                            "Attractions": [
+                                {"Name": "AttractionB3", "Type": "Beach"},
+                                {"Name": "AttractionB4", "Type": "Zoo"},
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }
+
+        schema = generate_schema(data)
+        expected_output = (
+            f"{schema}\n"
+            "CountryA|CityA1|AttractionA1|Museum^AttractionA2|Park^CityA2|AttractionA3|Beach^AttractionA4|Zoo^"
+            "CountryB|CityB1|AttractionB1|Museum^AttractionB2|Park^CityB2|AttractionB3|Beach^AttractionB4|Zoo"
+        )
+
+        output = io.StringIO()
+        writer = DictWriter(output, schema)
+        writer.writeheader()
+        writer.writerow(data)
+
+        self.assertEqual(expected_output, output.getvalue())
 
 
 if __name__ == "__main__":

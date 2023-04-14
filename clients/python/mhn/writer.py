@@ -53,11 +53,12 @@ class DictWriter:
             parts = []
             part_start = 0
             nesting_level = 0
+            in_array = False
 
             for idx, char in enumerate(schema_str):
-                if char == self.dialect.level_start:
+                if char == self.dialect.level_start or char == self.dialect.array_start:
                     nesting_level += 1
-                elif char == self.dialect.level_end:
+                elif char == self.dialect.level_end or char == self.dialect.array_end:
                     nesting_level -= 1
                 elif char == self.dialect.delimiter and nesting_level == 0:
                     parts.append(schema_str[part_start:idx])
@@ -94,9 +95,18 @@ class DictWriter:
             )[0]
 
             if self.dialect.array_start in part and self.dialect.array_end in part:
-                mhn_parts.append(
-                    self.dialect.array_separator.join(escape_control_chars(escape_newlines(data_dict[field_name], self.dialect), self.dialect))
-                )
+                array_items = data_dict[field_name]
+                if isinstance(array_items[0], dict):
+                    sub_schema = part.split(self.dialect.array_start)[1].rstrip(self.dialect.array_end)
+                    mhn_parts.append(
+                        self.dialect.array_separator.join([
+                            self.convert_dict_to_mhn(item, sub_schema=sub_schema) for item in array_items
+                        ])
+                    )
+                else:
+                    mhn_parts.append(
+                        self.dialect.array_separator.join(escape_control_chars(escape_newlines(array_items, self.dialect), self.dialect))
+                    )
             elif self.dialect.level_start in part:
                 field_name = part.split(self.dialect.level_start)[0]
                 _, nested_schema = part.split(self.dialect.level_start)
