@@ -97,7 +97,8 @@ class DictWriter:
             if self.dialect.array_start in part and self.dialect.array_end in part:
                 array_items = data_dict[field_name]
                 if isinstance(array_items[0], dict):
-                    sub_schema = part.split(self.dialect.array_start)[1].rstrip(self.dialect.array_end)
+                    end_index = part.rfind(self.dialect.array_end)
+                    sub_schema = part[:end_index].split(self.dialect.array_start, 1)[1]
                     mhn_parts.append(
                         self.dialect.array_separator.join([
                             self.convert_dict_to_mhn(item, sub_schema=sub_schema) for item in array_items
