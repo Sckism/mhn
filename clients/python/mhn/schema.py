@@ -21,7 +21,7 @@ def generate_schema(
             schema_parts.append(key)
     return dialect.delimiter.join(schema_parts)
 
-def parse_schema_parts(schema_str:str, dialect:Dialect) -> list[str]:
+def parse_schema_parts(schema_str:str, dialect:Dialect):
     parts = []
     part_start = 0
     nesting_level = 0
