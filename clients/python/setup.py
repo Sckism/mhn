@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mhn",
-    version="0.0.4",
+    version="0.0.5",
     description="Minimalist Hierarchical Notation (MHN) library",
     author="Peter Wicks",
     author_email="peter@wicks.ninja",
