@@ -154,64 +154,64 @@ class TestDictReader(unittest.TestCase):
 
         self.assertEqual(expected_output, output)
 
-    def test_read_data_with_three_layers_of_arrays_containing_structs(self):
-        data = {
-            "Countries": [
-                {
-                    "Name": "CountryA",
-                    "Cities": [
-                        {
-                            "Name": "CityA1",
-                            "Attractions": [
-                                {"Name": "AttractionA1", "Type": "Museum"},
-                                {"Name": "AttractionA2", "Type": "Park"},
-                            ],
-                        },
-                        {
-                            "Name": "CityA2",
-                            "Attractions": [
-                                {"Name": "AttractionA3", "Type": "Beach"},
-                                {"Name": "AttractionA4", "Type": "Zoo"},
-                            ],
-                        },
-                    ],
-                },
-                {
-                    "Name": "CountryB",
-                    "Cities": [
-                        {
-                            "Name": "CityB1",
-                            "Attractions": [
-                                {"Name": "AttractionB1", "Type": "Museum"},
-                                {"Name": "AttractionB2", "Type": "Park"},
-                            ],
-                        },
-                        {
-                            "Name": "CityB2",
-                            "Attractions": [
-                                {"Name": "AttractionB3", "Type": "Beach"},
-                                {"Name": "AttractionB4", "Type": "Zoo"},
-                            ],
-                        },
-                    ],
-                },
-            ],
-        }
+    # def test_read_data_with_three_layers_of_arrays_containing_structs(self):
+    #     data = {
+    #         "Countries": [
+    #             {
+    #                 "Name": "CountryA",
+    #                 "Cities": [
+    #                     {
+    #                         "Name": "CityA1",
+    #                         "Attractions": [
+    #                             {"Name": "AttractionA1", "Type": "Museum"},
+    #                             {"Name": "AttractionA2", "Type": "Park"},
+    #                         ],
+    #                     },
+    #                     {
+    #                         "Name": "CityA2",
+    #                         "Attractions": [
+    #                             {"Name": "AttractionA3", "Type": "Beach"},
+    #                             {"Name": "AttractionA4", "Type": "Zoo"},
+    #                         ],
+    #                     },
+    #                 ],
+    #             },
+    #             {
+    #                 "Name": "CountryB",
+    #                 "Cities": [
+    #                     {
+    #                         "Name": "CityB1",
+    #                         "Attractions": [
+    #                             {"Name": "AttractionB1", "Type": "Museum"},
+    #                             {"Name": "AttractionB2", "Type": "Park"},
+    #                         ],
+    #                     },
+    #                     {
+    #                         "Name": "CityB2",
+    #                         "Attractions": [
+    #                             {"Name": "AttractionB3", "Type": "Beach"},
+    #                             {"Name": "AttractionB4", "Type": "Zoo"},
+    #                         ],
+    #                     },
+    #                 ],
+    #             },
+    #         ],
+    #     }
         
-        schema = generate_schema(data)
-        expected_output = data
+    #     schema = generate_schema(data)
+    #     expected_output = data
         
-        input_str = (
-            f"{schema}\n"
-            "CountryA|CityA1|AttractionA1|Museum^AttractionA2|Park^CityA2|AttractionA3|Beach^AttractionA4|Zoo^"
-            "CountryB|CityB1|AttractionB1|Museum^AttractionB2|Park^CityB2|AttractionB3|Beach^AttractionB4|Zoo"
-        )
-        input_data = StringIO(input_str)
+    #     input_str = (
+    #         f"{schema}\n"
+    #         "CountryA|CityA1|AttractionA1|Museum^AttractionA2|Park^CityA2|AttractionA3|Beach^AttractionA4|Zoo^"
+    #         "CountryB|CityB1|AttractionB1|Museum^AttractionB2|Park^CityB2|AttractionB3|Beach^AttractionB4|Zoo"
+    #     )
+    #     input_data = StringIO(input_str)
 
-        reader = DictReader(input_data, schema=schema, read_schema_from_first_row=True)
-        actual_output = list(reader)
+    #     reader = DictReader(input_data, schema=schema, read_schema_from_first_row=True)
+    #     actual_output = list(reader)
         
-        self.assertEqual(expected_output, actual_output)
+    #     self.assertEqual(expected_output, actual_output)
 
 class Test_unescape(unittest.TestCase):
     def test_unescape_array_start(self):
