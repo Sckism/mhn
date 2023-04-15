@@ -20,7 +20,7 @@ class Dialect:
         self.escape_char = escape_char
     
     @property
-    def control_chars(self):
+    def control_chars(self) -> set:
         return set(
             self.level_start
             + self.level_end
@@ -29,6 +29,17 @@ class Dialect:
             + self.array_separator
             + self.delimiter
         )
+        
+    @property
+    def escape_mappings(self) -> dict:
+        return {
+            f"{self.escape_char}{self.array_start}": "___ARRAY_START___",
+            f"{self.escape_char}{self.array_end}": "___ARRAY_END___",
+            f"{self.escape_char}{self.level_start}": "___LEVEL_START___",
+            f"{self.escape_char}{self.level_end}": "___LEVEL_END___",
+            f"{self.escape_char}{self.delimiter}": "___DELIMITER___",
+            f"{self.escape_char}{self.array_separator}": "___ARRAY_SEPARATOR___",
+        }
 
 
 default_dialect = Dialect()

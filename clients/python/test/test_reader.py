@@ -1,8 +1,8 @@
 import unittest
 from io import StringIO
-from mhn.dialect import Dialect
+from mhn.dialect import Dialect, default_dialect
 from mhn.reader import DictReader
-
+from mhn.utilities import unescape, parse_array, unescape_newlines, split_nested
 from mhn.schema import generate_schema
 
 
@@ -154,6 +154,138 @@ class TestDictReader(unittest.TestCase):
 
         self.assertEqual(expected_output, output)
 
+    def test_read_data_with_three_layers_of_arrays_containing_structs(self):
+        data = {
+            "Countries": [
+                {
+                    "Name": "CountryA",
+                    "Cities": [
+                        {
+                            "Name": "CityA1",
+                            "Attractions": [
+                                {"Name": "AttractionA1", "Type": "Museum"},
+                                {"Name": "AttractionA2", "Type": "Park"},
+                            ],
+                        },
+                        {
+                            "Name": "CityA2",
+                            "Attractions": [
+                                {"Name": "AttractionA3", "Type": "Beach"},
+                                {"Name": "AttractionA4", "Type": "Zoo"},
+                            ],
+                        },
+                    ],
+                },
+                {
+                    "Name": "CountryB",
+                    "Cities": [
+                        {
+                            "Name": "CityB1",
+                            "Attractions": [
+                                {"Name": "AttractionB1", "Type": "Museum"},
+                                {"Name": "AttractionB2", "Type": "Park"},
+                            ],
+                        },
+                        {
+                            "Name": "CityB2",
+                            "Attractions": [
+                                {"Name": "AttractionB3", "Type": "Beach"},
+                                {"Name": "AttractionB4", "Type": "Zoo"},
+                            ],
+                        },
+                    ],
+                },
+            ],
+        }
+        
+        schema = generate_schema(data)
+        expected_output = data
+        
+        input_str = (
+            f"{schema}\n"
+            "CountryA|CityA1|AttractionA1|Museum^AttractionA2|Park^CityA2|AttractionA3|Beach^AttractionA4|Zoo^"
+            "CountryB|CityB1|AttractionB1|Museum^AttractionB2|Park^CityB2|AttractionB3|Beach^AttractionB4|Zoo"
+        )
+        input_data = StringIO(input_str)
+
+        reader = DictReader(input_data, schema=schema, read_schema_from_first_row=True)
+        actual_output = list(reader)
+        
+        self.assertEqual(expected_output, actual_output)
+
+class Test_unescape(unittest.TestCase):
+    def test_unescape_array_start(self):
+        escaped = f"{default_dialect.escape_mappings[default_dialect.escape_char+default_dialect.array_start]}"
+        unescaped = default_dialect.array_start
+        self.assertEqual(unescape(f"___{escaped}___", default_dialect), f"___{unescaped}___")
+
+    def test_unescape_array_end(self):
+        escaped = f"{default_dialect.escape_mappings[default_dialect.escape_char+default_dialect.array_end]}"
+        unescaped = default_dialect.array_end
+        self.assertEqual(unescape(f"___{escaped}___", default_dialect), f"___{unescaped}___")
+
+    def test_unescape_level_start(self):
+        escaped = f"{default_dialect.escape_mappings[default_dialect.escape_char+default_dialect.level_start]}"
+        unescaped = default_dialect.level_start
+        self.assertEqual(unescape(f"___{escaped}___", default_dialect), f"___{unescaped}___")
+
+    def test_unescape_level_end(self):
+        escaped = f"{default_dialect.escape_mappings[default_dialect.escape_char+default_dialect.level_end]}"
+        unescaped = default_dialect.level_end
+        self.assertEqual(unescape(f"___{escaped}___", default_dialect), f"___{unescaped}___")
+
+    def test_unescape_delimiter(self):
+        escaped = f"{default_dialect.escape_mappings[default_dialect.escape_char+default_dialect.delimiter]}"
+        unescaped = default_dialect.delimiter
+        self.assertEqual(unescape(f"___{escaped}___", default_dialect), f"___{unescaped}___")
+
+    def test_unescape_array_separator(self):
+        escaped = f"{default_dialect.escape_mappings[default_dialect.escape_char+default_dialect.array_separator]}"
+        unescaped = default_dialect.array_separator
+        self.assertEqual(unescape(f"___{escaped}___", default_dialect), f"___{unescaped}___")
+
+class Test_unescape_newline(unittest.TestCase):
+    def test_unescape_newlines_single_line(self):
+        escaped = f"{default_dialect.escape_char}\\n"
+        unescaped = "\n"
+        self.assertEqual(unescape_newlines(f"Line 1{escaped}Line 2", default_dialect), f"Line 1{unescaped}Line 2")
+
+    def test_unescape_newlines_multiple_lines(self):
+        escaped = f"{default_dialect.escape_char}\\n"
+        unescaped = "\n"
+        self.assertEqual(
+            unescape_newlines(f"Line 1{escaped}Line 2{escaped}Line 3", default_dialect),
+            f"Line 1{unescaped}Line 2{unescaped}Line 3",
+        )
+
+    def test_unescape_newlines_nested_list(self):
+        escaped = f"{default_dialect.escape_char}\\n"
+        unescaped = "\n"
+        input_data = [["Line 1", f"Line 2{escaped}Line 3"], [f"Line 4{escaped}Line 5"]]
+        expected_output = [["Line 1", f"Line 2{unescaped}Line 3"], [f"Line 4{unescaped}Line 5"]]
+        self.assertEqual(unescape_newlines(input_data, default_dialect), expected_output)
+
+class Test_parse_array(unittest.TestCase):
+    def test_parse_array_simple(self):
+        array_str = f"{default_dialect.array_start}item1{default_dialect.array_separator}item2{default_dialect.array_end}"
+        expected_output = ["item1", "item2"]
+        self.assertEqual(parse_array(array_str, default_dialect), expected_output)
+
+    def test_parse_array_with_empty_items(self):
+        array_str = f"{default_dialect.array_start}{default_dialect.array_separator}{default_dialect.array_separator}{default_dialect.array_end}"
+        expected_output = ["", "", ""]
+        self.assertEqual(parse_array(array_str, default_dialect), expected_output)
+
+    # It is not possible for this method to return an empty array, will always return 1 empty string if no data
+    def test_parse_array_empty(self):
+        array_str = f"{default_dialect.array_start}{default_dialect.array_end}"
+        expected_output = ['']
+        self.assertEqual(parse_array(array_str, default_dialect), expected_output)
+
+    def test_parse_array_no_start_end(self):
+        array_str = f"item1{default_dialect.array_separator}item2"
+        expected_output = ["item1", "item2"]
+        self.assertEqual(parse_array(array_str, default_dialect), expected_output)
 
 if __name__ == "__main__":
     unittest.main()

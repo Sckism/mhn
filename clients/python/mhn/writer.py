@@ -1,5 +1,7 @@
 from io import IOBase
 from .dialect import Dialect, default_dialect
+from .schema import parse_schema_parts
+from .utilities import escape_newlines, escape, escape_control_chars
 
 
 class DictWriter:
@@ -49,43 +51,6 @@ class DictWriter:
         pass
 
     def convert_dict_to_mhn(self, data_dict, sub_schema=None):
-        def parse_schema_parts(schema_str):
-            parts = []
-            part_start = 0
-            nesting_level = 0
-            in_array = False
-
-            for idx, char in enumerate(schema_str):
-                if char == self.dialect.level_start or char == self.dialect.array_start:
-                    nesting_level += 1
-                elif char == self.dialect.level_end or char == self.dialect.array_end:
-                    nesting_level -= 1
-                elif char == self.dialect.delimiter and nesting_level == 0:
-                    parts.append(schema_str[part_start:idx])
-                    part_start = idx + 1
-
-            parts.append(schema_str[part_start:])
-            return parts
-        
-        def escape_newlines(value, dialect:Dialect):
-            if isinstance(value, str):
-                return value.replace(dialect.line_break, "\\n")
-            elif isinstance(value, list):
-                return [escape_newlines(v, dialect) for v in value]
-            else:
-                return value
-            
-        def escape(value, dialect):
-            if isinstance(value, str):
-                for control_char in dialect.control_chars:
-                    value = value.replace(control_char, f"{dialect.escape_char}{control_char}")
-            elif isinstance(value, list):
-                value = [escape(v, dialect) for v in value]
-            return value
-        
-        def escape_control_chars(data, dialect: Dialect):
-            return [escape(v, dialect) for v in data]
-
         def handle_array(part, array_items):
             if isinstance(array_items[0], dict):
                 end_index = part.rfind(self.dialect.array_end)
@@ -105,7 +70,7 @@ class DictWriter:
             return escape(escape_newlines(str(data_dict[field_name]), self.dialect), self.dialect)
 
         mhn_parts = []
-        schema_parts = parse_schema_parts(sub_schema or self.schema)
+        schema_parts = parse_schema_parts(sub_schema or self.schema, self.dialect)
 
         for part in schema_parts:
             field_name = part.split(self.dialect.array_start)[0].split(

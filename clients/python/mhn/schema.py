@@ -20,3 +20,20 @@ def generate_schema(
         else:
             schema_parts.append(key)
     return dialect.delimiter.join(schema_parts)
+
+def parse_schema_parts(schema_str:str, dialect:Dialect) -> list[str]:
+    parts = []
+    part_start = 0
+    nesting_level = 0
+
+    for idx, char in enumerate(schema_str):
+        if char == dialect.level_start or char == dialect.array_start:
+            nesting_level += 1
+        elif char == dialect.level_end or char == dialect.array_end:
+            nesting_level -= 1
+        elif char == dialect.delimiter and nesting_level == 0:
+            parts.append(schema_str[part_start:idx])
+            part_start = idx + 1
+
+    parts.append(schema_str[part_start:])
+    return parts
