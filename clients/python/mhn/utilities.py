@@ -49,7 +49,10 @@ def parse_array(array_str, dialect:Dialect):
     if array_str.startswith(dialect.array_start) and array_str.endswith(
         dialect.array_end
     ):
-        array_str = array_str[1:-1]
+        array_str = array_str[1:-1]    
+    
+    if array_str == dialect.empty_array:
+        return []
     array_items = array_str.split(dialect.array_separator)
     # Unescape escaped control characters in array items
     array_items = [unescape(item, dialect) for item in array_items]

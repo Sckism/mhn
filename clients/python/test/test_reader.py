@@ -276,10 +276,9 @@ class Test_parse_array(unittest.TestCase):
         expected_output = ["", "", ""]
         self.assertEqual(parse_array(array_str, default_dialect), expected_output)
 
-    # It is not possible for this method to return an empty array, will always return 1 empty string if no data
     def test_parse_array_empty(self):
-        array_str = f"{default_dialect.array_start}{default_dialect.array_end}"
-        expected_output = ['']
+        array_str = f"{default_dialect.array_start}~{default_dialect.array_end}"
+        expected_output = []
         self.assertEqual(parse_array(array_str, default_dialect), expected_output)
 
     def test_parse_array_no_start_end(self):
