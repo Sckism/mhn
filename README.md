@@ -1,5 +1,8 @@
 # Minimalist Hierarchical Notation (MHN)
 
+[![Python package](https://github.com/Sckism/mhn/actions/workflows/python-package.yml/badge.svg)](https://github.com/Sckism/mhn/actions/workflows/python-package.yml)
+
+
 Minimalist Hierarchical Notation (MHN) is a lightweight and compact data structure format designed to represent hierarchical data. Think of it as a CSV variant with support for the features you are used to using in JSON or YAML. One of the side effects of this is minimal token usage in Large Language Models as compared to using JSON/XML/YAML. MHN uses a combination of simple delimiters and special characters to separate fields, indicate if a field is an array, and manage nested data structures.
 
 ## Features
@@ -11,7 +14,7 @@ Minimalist Hierarchical Notation (MHN) is a lightweight and compact data structu
 ## Installation
 
 ```sh
-pip install mhn
+pip install sckism-mhn
 ```
 
 ## Example Usage
