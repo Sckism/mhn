@@ -33,9 +33,10 @@ jobs:
     - name: Build package
       run: python -m build
       working-directory: ./clients/python
+    - name: Copy Dist
+      run: cp -r ./clients/python/dist ./dist
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-        packages-dir: clients/python/dist/
